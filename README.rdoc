@@ -6,7 +6,7 @@
 
 RightLink automates servers configuration and monitoring. It uses Nanite[1] as
 message bus and relies on Chef[2] for configuring. Servers running the
-RightLink agent configures themselves on startup an register with the Nanite
+RightLink agent configure themselves on startup and register with the Nanite
 mapper so that operational recipes and scripts can be run at a later time.
 
 Refer to the wiki (https://github.com/rightscale/right_link/wikis) for up-to-date
@@ -60,7 +60,7 @@ to receive requests.
 
 RightLink comes with two command line tools <i>rs_run_recipe</i> and
 <i>rs_run_right_script</i> which allow triggering the execution of operational
-Chef recipes or RighScript respecively from within the instance itself. These
+Chef recipes or RighScript respectively from within the instance itself. These
 two command line tools tell the RightLink agent to send a
 <i>forwarder/schedule_recipe</i> or <i>forwarder/schedule_right_script</i>
 request to the agents that provide these operations. These agents should in
@@ -89,7 +89,7 @@ command line tool:
 (again <tt>rnac --help</tt> for more details on the rnac tool)
 
 This requires that a RabbitMQ broker is running on localhost and has a /nanite
-vhost configured with a Nanite mapper running and setup to use the Nanite
+vhost configured with a Nanite mapper running and set up to use the Nanite
 secure serializer.
 
 == Supported Configuration
