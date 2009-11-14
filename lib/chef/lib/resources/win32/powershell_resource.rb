@@ -20,44 +20,33 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# To install the chef gem:
-# sudo gem sources -a http://gems.opscode.com
-# sudo gem install chef ohai
-
 require 'fileutils'
-
-require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'config', 'right_link_config'))
 
 class Chef
 
   class Resource
 
-    # RightScript chef resource.
-    # Allows defining recipes which wrap RightScripts.
+    # PowerShell chef resource.
+    # Allows defining recipes which wrap PowerShell v1.0 scripts.
     #
     # === Example
-    # right_script "APP Mephisto bootstrap configure v2" do
-    #   source   '#!/bin/bash\ ...'
-    #   parameters['APPLICATION'] 'My Mephisto App'
-    #   parameters['DB_SCHEMA_NAME'] 'db_schema'
-    #   parameters['RAILS_ENV'] 'production'
-    #   cache_dir '/var/cache/rightscale/app_mephisto'
-    #   audit_id 104
+    # powershell "My Powershell Script" do
+    #   source "write-output \"Running powershell v1.0 script\""
     # end
-    class RightScript < Chef::Resource
+    class PowerShell < Chef::Resource
 
-      # Default directory used to cache RightScript source
+      # Default directory used to cache PowerShell source
       DEFAULT_CACHE_DIR_ROOT = ::File.join(RightScale::RightLinkConfig.platform.filesystem.cache_dir, 'rightscale')
 
-      # Initialize RightScript resource with default values
+      # Initialize PowerShell resource with default values
       #
       # === Parameters
-      # name<String>:: Nickname of RightScript
+      # name<String>:: Nickname of PowerShell
       # collection<Array>:: Collection of included recipes
       # node<Chef::Node>:: Node where resource will be used
-      def initialize(name, collection, node)
+      def initialize(name, collection=nil, node=nil)
         super(name, collection, node)
-        @resource_name = :right_script
+        @resource_name = :powershell
         @cache_dir = ::File.join(DEFAULT_CACHE_DIR_ROOT, Nanite::Identity.generate)
         @audit_id = 0
         @parameters = {}
@@ -65,7 +54,7 @@ class Chef
         @allowed_actions.push(:run)
       end
 
-      # <String> RightScript nickname
+      # <String> PowerShell nickname
       def nickname(arg=nil)
         set_or_return(
           :nickname,
@@ -74,7 +63,7 @@ class Chef
         )
       end
 
-      # <String> RightScript source code
+      # <String> PowerShell source code
       def source(arg=nil)
         set_or_return(
           :source,
@@ -83,7 +72,7 @@ class Chef
         )
       end
 
-      # <Hash> RightScript parameters values keyed by names
+      # <Hash> PowerShell parameters values keyed by names
       def parameters(arg=nil)
         set_or_return(
           :parameters,
@@ -93,7 +82,7 @@ class Chef
         )
       end
 
-      # <String> Path to directory where RightScript source should be saved
+      # <String> Path to directory where PowerShell source should be saved
       def cache_dir(arg=nil)
         set_or_return(
           :cache_dir,
@@ -102,7 +91,7 @@ class Chef
         )
       end
 
-      # <Integer> Audit id used to audit RightScript execution output
+      # <Integer> Audit id used to audit PowerShell execution output
       # An id of 0 means that a new audit should be created
       def audit_id(arg=nil)
         set_or_return(
@@ -115,3 +104,5 @@ class Chef
     end
   end
 end
+
+Chef::Platform.platforms[:default].merge!(:powershell => Chef::Provider::PowerShell)

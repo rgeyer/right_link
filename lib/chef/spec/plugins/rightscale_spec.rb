@@ -20,12 +20,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  
-require File.join(File.dirname(__FILE__), 'spec_helper.rb')
+require File.join(File.dirname(__FILE__), '..', 'spec_helper.rb')
 require 'flexmock'
  
 describe Ohai::System, "plugin rightscale" do
   before(:each) do
-    Ohai::Config[:plugin_path] << File.join(File.dirname(__FILE__), '..', 'lib', 'plugins')
+    Ohai::Config[:plugin_path] << File.join(File.dirname(__FILE__), '..', '..', 'lib', 'plugins')
     @ohai = Ohai::System.new
     flexmock(@ohai).should_receive(:require_plugin).and_return(true)
   end

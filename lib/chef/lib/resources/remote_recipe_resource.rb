@@ -20,87 +20,82 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require 'fileutils'
-
 class Chef
-
   class Resource
 
-    # PowerShell chef resource.
-    # Allows defining recipes which wrap PowerShell v1.0 scripts.
+    # Recipe that should be run on a remote RightLink agent
     #
-    # === Example
-    # powershell "My Powershell Script" do
-    #   source "write-output \"Running powershell v1.0 script\""
-    # end
-    class PowerShell < Chef::Resource
+    class RemoteRecipe < Chef::Resource
 
-      # Default directory used to cache PowerShell source
-      DEFAULT_CACHE_DIR_ROOT = ::File.join(RightScale::RightLinkConfig.platform.filesystem.cache_dir, 'rightscale')
-
-      # Initialize PowerShell resource with default values
+      # Initialize log resource with a name as the string to log
       #
       # === Parameters
-      # name<String>:: Nickname of PowerShell
+      # name<String>:: Message to log
       # collection<Array>:: Collection of included recipes
       # node<Chef::Node>:: Node where resource will be used
       def initialize(name, collection=nil, node=nil)
         super(name, collection, node)
-        @resource_name = :powershell
-        @cache_dir = ::File.join(DEFAULT_CACHE_DIR_ROOT, Nanite::Identity.generate)
-        @audit_id = 0
-        @parameters = {}
+        @resource_name = :remote_recipe
+        @scope = :all
         @action = :run
         @allowed_actions.push(:run)
       end
 
-      # <String> PowerShell nickname
-      def nickname(arg=nil)
+      # Name of recipe that should be run remotely
+      def recipe(arg=nil)
         set_or_return(
-          :nickname,
+          :recipe,
           arg,
           :kind_of => [ String ]
         )
       end
 
-      # <String> PowerShell source code
-      def source(arg=nil)
+      # Override attributes that should be used to run the remote recipe
+      def attributes(arg=nil)
         set_or_return(
-          :source,
+          :attributes,
           arg,
-          :kind_of => [ String ]
+          :kind_of => [ Hash ]
         )
       end
 
-      # <Hash> PowerShell parameters values keyed by names
-      def parameters(arg=nil)
+      # List of ids of agents that should run the recipe
+      # These ids should have been retrieved using the :from attribute
+      # of a remote recipe previously run on this agent
+      def recipients(arg=nil)
+        converted_arg = arg.is_a?(String) ? [ arg ] : arg
         set_or_return(
-          :parameters,
-          arg,
-          #:kind_of => [ Hash ]
-          :kind_of => [ Chef::Node::Attribute ] # Change back to Hash when Chef is fixed
+          :recipients,
+          converted_arg,
+          :kind_of => [ Array ]
         )
       end
 
-      # <String> Path to directory where PowerShell source should be saved
-      def cache_dir(arg=nil)
+      # List of tags used to route the request
+      # Only instances that expose *all* of the tags in this list
+      # will run the recipe
+      def recipients_tags(arg=nil)
+        converted_arg = arg.is_a?(String) ? [ arg ] : arg
         set_or_return(
-          :cache_dir,
-          arg,
-          :kind_of => [ String ]
+          :recipient_tags,
+          converted_arg,
+          :kind_of => [ Array ]
         )
       end
 
-      # <Integer> Audit id used to audit PowerShell execution output
-      # An id of 0 means that a new audit should be created
-      def audit_id(arg=nil)
+      # Scope of remote recipe: whether a single or all potential recipients
+      # should run the recipe.
+      # Only applies when used in conjunction with +recipients_tags+
+      # Defaults to :all
+      def scope(arg=nil)
         set_or_return(
-          :audit_id,
+          :scope,
           arg,
-          :kind_of => [ Integer ]
+          :equal_to => [ :single, :all ]
         )
       end
-
     end
   end
 end
+
+Chef::Platform.platforms[:default].merge!(:remote_recipe => Chef::Provider::RemoteRecipe)

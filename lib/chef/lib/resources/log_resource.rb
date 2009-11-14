@@ -64,4 +64,6 @@ class Chef
   end  
 end
 
+Chef::Platform.platforms[:default].merge!(:log => Chef::Provider::Log::ChefLog)
+
 

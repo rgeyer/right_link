@@ -98,3 +98,4 @@ class Chef
   end
 end
 
+Chef::Platform.platforms[:default].merge!(:dns => Chef::Provider::DnsMadeEasy)

@@ -142,3 +142,5 @@ class Chef
     end
   end
 end
+
+Chef::Platform.platforms[:default].merge!(:executable_schedule => Chef::Provider::ExecutableSchedule)

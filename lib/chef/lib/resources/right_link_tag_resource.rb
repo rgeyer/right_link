@@ -46,4 +46,6 @@ class Chef
 
 end
 
+Chef::Platform.platforms[:default].merge!(:right_link_tag => Chef::Provider::RightLinkTag)
+
 
