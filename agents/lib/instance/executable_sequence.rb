@@ -66,6 +66,7 @@ module RightScale
         download_attachments if @ok
         install_packages if @ok
         download_cookbooks if @ok
+        load_plugins if @ok
         run_recipe(@recipes.shift) if @ok
         @auditor.update_status("completed: #{@description}") if @ok
       end
@@ -86,11 +87,37 @@ module RightScale
       #Chef logging
       Chef::Log.logger = AuditLogger.new(@auditor)
       Chef::Log.logger.level = RightLinkLog.level_from_sym(RightLinkLog.level)
-
+      
       #Chef paths and run mode
       Chef::Config[:cookbook_path] = @cookbook_repos.map { |r| cookbooks_path(r) }.flatten.uniq
       Chef::Config[:cookbook_path] << File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'lib', 'chef'))
-      Chef::Config[:solo] = true
+      Chef::Config[:solo] = true    
+      true
+    end
+    
+    # Search the cookbook paths for custom reources and providers and plugs 
+    # them into our instance.
+    #
+    # All providers are loaded first, then resources.  The plugins are loaded 
+    # according to the cookbook path order (i.e. first plugin in path wins). 
+    # Due to the way ruby loads classes, we accomplish this by loading plugin 
+    # classes in reverse order. 
+    #
+    # == Returns
+    # true:: Always return true
+    def load_plugins
+      Chef::Log.info("Searching cookbooks for providers/resources...")    
+      [ "providers", "resources"].each do |dir|      
+        Chef::Config[:cookbook_path].reverse.each do |cb_path|
+        Chef::Log.info("  CKP: cb_path=#{cb_path}")
+          path_pattern = File.join( cb_path, "**", "plugins", dir, "**", "*.rb")
+          Chef::Log.info("  CKP: pattern=#{path_pattern}")
+          Dir.glob(path_pattern).each do |f| 
+            Chef::Log.info("  Loading #{File.basename(f)}.")
+            require f 
+          end
+        end
+      end
       true
     end
 
