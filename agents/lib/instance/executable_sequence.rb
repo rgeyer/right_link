@@ -109,9 +109,7 @@ module RightScale
       Chef::Log.info("Searching cookbooks for providers/resources...")    
       [ "providers", "resources"].each do |dir|      
         Chef::Config[:cookbook_path].reverse.each do |cb_path|
-        Chef::Log.info("  CKP: cb_path=#{cb_path}")
           path_pattern = File.join( cb_path, "**", "plugins", dir, "**", "*.rb")
-          Chef::Log.info("  CKP: pattern=#{path_pattern}")
           Dir.glob(path_pattern).each do |f| 
             Chef::Log.info("  Loading #{File.basename(f)}.")
             require f 
