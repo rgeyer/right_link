@@ -32,10 +32,11 @@ class Chef
       QUERY_TIMEOUT = 60
 
       # Initialize condition variable used to synchronize chef and EM threads
-      def initialize(node, resource, collection=nil, definitions={}, cookbook_loader=nil)
-        super(node, resource)
+      def initialize(new_resource, run_context)
+        super(new_resource, run_context)
         @mutex        = Mutex.new
         @loaded_event = ConditionVariable.new
+        @node = node
       end
 
       # This provider doesn't actually change any state on the server
@@ -86,7 +87,7 @@ class Chef
         end
         if status == :succeeded && result
           collection = result.inject({}) { |res, (k, v)| res[k] = v['tags']; res }
-          @node[:server_collection][@new_resource.name] = collection
+          node[:server_collection][@new_resource.name] = collection
         else
           RightScale::RightLinkLog.debug("ServerCollection load failed for #{@new_resource.name} (timed out after #{QUERY_TIMEOUT}s)")
         end

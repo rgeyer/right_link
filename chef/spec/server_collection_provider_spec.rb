@@ -29,9 +29,11 @@ describe Chef::Provider::ServerCollection do
 
   before(:each) do
     @result = {}
+    @node = Chef::Node.new
+    @node[:server_collection] = {'resource_name' => nil } 
+    @run_context = Chef::RunContext.new(@node, {})
     @resource = Chef::Resource::ServerCollection.new("test")
-    @provider = Chef::Provider::ServerCollection.new(nil, @resource)
-    @provider.instance_variable_set(:@node, {:server_collection => { 'resource_name' => nil }})
+    @provider = Chef::Provider::ServerCollection.new(@resource, @run_context)
     @provider.instance_variable_set(:@new_resource, flexmock('resource', :name => 'resource_name', :tags => 'tag1', :agent_ids => nil))
   end
 
@@ -44,7 +46,8 @@ describe Chef::Provider::ServerCollection do
     # Run the EM thread and poll for result
     EM.run do
       EM.add_periodic_timer(0.1) do
-        succeeded = @provider.instance_variable_get(:@node)[:server_collection]['resource_name'] == @result
+        run_context = @provider.instance_variable_get(:@run_context)
+        succeeded = run_context.node[:server_collection]['resource_name'] == @result
         EM.stop if succeeded
       end
       EM.add_timer(1) { EM.stop }
@@ -57,7 +60,8 @@ describe Chef::Provider::ServerCollection do
       Chef::Provider::ServerCollection.const_set(:QUERY_TIMEOUT, 0.5)
       flexmock(RightScale::RequestForwarder.instance).should_receive(:request).and_yield(nil)
       perform_load
-      @provider.instance_variable_get(:@node)[:server_collection]['resource_name'].should == {}
+      node = @provider.run_context.node.normal_attrs
+      node[:server_collection]['resource_name'].should == {}
     ensure
       Chef::Provider::ServerCollection.const_set(:QUERY_TIMEOUT, old_timeout)
     end

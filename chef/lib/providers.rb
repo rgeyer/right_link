@@ -35,8 +35,6 @@ require File.join(File.dirname(__FILE__), 'providers', 'dns_dnsmadeeasy_provider
 require File.join(File.dirname(__FILE__), 'providers', 'dns_resource')
 require File.join(File.dirname(__FILE__), 'providers', 'executable_schedule_provider')
 require File.join(File.dirname(__FILE__), 'providers', 'executable_schedule_resource')
-require File.join(File.dirname(__FILE__), 'providers', 'log_provider_chef')
-require File.join(File.dirname(__FILE__), 'providers', 'log_resource')
 require File.join(File.dirname(__FILE__), 'providers', 'remote_recipe_provider')
 require File.join(File.dirname(__FILE__), 'providers', 'remote_recipe_resource')
 require File.join(File.dirname(__FILE__), 'providers', 'right_link_tag_provider')

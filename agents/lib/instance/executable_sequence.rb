@@ -259,7 +259,7 @@ module RightScale
       begin
         audit_time do
           c.json_attribs = attribs
-          c.run_solo
+          c.run
         end
       rescue Exception => e
         report_failure('Chef converge failed', chef_error(e))
