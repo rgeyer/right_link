@@ -61,6 +61,7 @@ module RightScale
       end
       cmd = { :name => options[:action] }
       cmd[:tag] = options[:tag] if options[:tag]
+      cmd[:query] = options[:query] if options[:query]
       config_options = agent_options('instance')
       listen_port = config_options[:listen_port]
       fail('Could not retrieve agent listen port') unless listen_port
@@ -72,6 +73,12 @@ module RightScale
               puts "No server tag found"
             else
               puts "Server tags (#{res.size}):\n#{res.map { |tag| "  - #{tag}" }.join("\n")}\n"
+            end
+          elsif options[:action] == :query_tags
+            if res.empty?
+              puts "No server with given tags '#{options[:query]}'"
+            else
+              # ....
             end
           else
             puts res
@@ -104,6 +111,11 @@ module RightScale
         opts.on('-r', '--remove NAME') do |n|
           options[:action] = :remove_tag
           options[:tag] = n
+        end
+
+        opts.on('-q', '--query QUERY') do |q|
+          options[:action] = :query_tags
+          options[:query] = q
         end
 
         opts.on('-v', '--verbose') do

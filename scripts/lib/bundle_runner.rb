@@ -129,6 +129,16 @@ module RightScale
           end
         end
 
+        opts.on('-t', '--target TARGET') do |t|
+          begin
+            target = t.split('=')
+          rescue Exception => e
+          end
+          options[:target_id] = 123
+          # OR
+          options[:target_tags] = ''
+        end
+
        opts.on('-v', '--verbose') do
          options[:verbose] = true
        end
@@ -176,6 +186,8 @@ protected
     # opts(Hash):: Forwarder actor compatible options hash
     def to_forwarder_options(options)
       opts = {}
+      opts[:target_id] = options[:target_id] if options.has?(:target_id)
+      opts[:target_tags] = options[:target_tags] if options.has?(:target_tags)
       if options[:bundle_type] == :right_script
         opts[:right_script_id] = options[:id] if options[:id]
         opts[:right_script]    = options[:name] if options[:name] && !options[:id]

@@ -103,7 +103,12 @@ module RightScale
     # === Return
     # true:: Always return true
     def run_recipe_command(opts)
-      send_request('/forwarder/schedule_recipe', opts[:conn], opts[:options])
+      if opts[:target_id] || opts[:target_tags]
+        # Use target to route in send_push
+        send_push('/instance_scheduler/execute', opts[:conn], opts[:options])
+      else
+        send_request('/forwarder/schedule_recipe', opts[:conn], opts[:options])
+      end
     end
 
     # Run RightScript command implementation
@@ -115,7 +120,12 @@ module RightScale
     # === Return
     # true:: Always return true
     def run_right_script_command(opts)
-      send_request('/forwarder/schedule_right_script', opts[:conn], opts[:options])
+      if opts[:target_id] || opts[:target_tags]
+        # Use target to route in send_push
+        send_push('/instance_scheduler/execute', opts[:conn], opts[:options])
+      else
+        send_request('/forwarder/schedule_right_script', opts[:conn], opts[:options])
+      end
     end
 
     # Send request to remote agent
@@ -233,6 +243,13 @@ module RightScale
       CommandIO.instance.reply(opts[:conn], "Request to remove tag '#{opts[:tag]}' sent successfully.")
     end
 
+    def query_tags_command(opts)
+      send_request('/mapper/query_tags', opts[:conn], opts[:query]) do |r|
+        # ....
+        CommandIO.instance.reply(opts[:conn], '...')
+      end
+    end
+
     # Update audit summary
     #
     # === Parameters
@@ -333,6 +350,10 @@ module RightScale
         CommandIO.instance.reply(conn, reply)
       end
       true
+    end
+
+    def send_push('....')
+      #...
     end
 
   end

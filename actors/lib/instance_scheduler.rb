@@ -78,16 +78,28 @@ class InstanceScheduler
   #
   # === Parameters
   # options[:recipe](String):: Recipe name
+  # options[:recipe_id](Integer):: Recipe id
+  # options[:right_script](String):: RightScript name
+  # options[:right_script_id](Integer):: RightScript id
   # options[:json](Hash):: Serialized hash of attributes to be used when running recipe
+  # options[:arguments](Hash):: RightScript inputs hash
   #
   # === Return
   # true:: Always return true
   def execute(options)
     options[:agent_identity] = @agent_identity
-    RightScale::RequestForwarder.instance.request('/forwarder/schedule_recipe', options) do |r|
-      res = RightScale::OperationResult.from_results(r)
-      RightScale::RightLinkLog.info("Failed to execute recipe: #{res.content}") unless res.success?
+    if options[:recipe] || options[:recipe_id]
+      RightScale::RequestForwarder.instance.request('/forwarder/schedule_recipe', options) do |r|
+        res = RightScale::OperationResult.from_results(r)
+        RightScale::RightLinkLog.info("Failed to execute recipe: #{res.content}") unless res.success?
+      end
+    elsif options[:right_script] || options[:right_script_id]
+      RightScale::RequestForwarder.instance.request('/forwarder/schedule_right_script', options) do |r|
+        res = RightScale::OperationResult.from_results(r)
+        RightScale::RightLinkLog.info("Failed to execute RightScript: #{res.content}") unless res.success?
+      end
     end
+
     true
   end
 
