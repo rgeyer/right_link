@@ -63,7 +63,7 @@ module RightScale
       @scripts                = bundle.executables.select { |e| e.is_a?(RightScriptInstantiation) }
       recipes                 = bundle.executables.map    { |e| e.is_a?(RecipeInstantiation) ? e : @right_scripts_cookbook.recipe_from_right_script(e) }
       @cookbooks              = bundle.cookbooks
-      @repose_server          = bundle.repose_server
+      @repose_servers         = bundle.repose_servers
       @downloader             = Downloader.new
       @download_path          = InstanceConfiguration.cookbook_download_path
       @powershell_providers   = nil
@@ -216,24 +216,24 @@ module RightScale
       # Skip download if in dev mode and cookbooks repos directories already have files in them
       return true unless DevState.download_cookbooks?
 
-      @audit.create_new_section('Retrieving cookbooks') unless @cookbook_repos.empty?
+      @audit.create_new_section('Retrieving cookbooks') unless @cookbooks.empty?
       audit_time do
-        connection = RightHttpConnection.new(:user_agent => 'Repose client',
-                                             :logger => @logger,
-                                             :exception => ReposeConnectionException)
+        connection = Rightscale::HttpConnection.new(:user_agent => 'Repose client',
+                                                    :logger => @logger,
+                                                    :exception => ReposeConnectionException)
         server = find_repose_server(connection)
         @cookbooks.each do |cookbook|
           @audit.update_status("Downloading #{cookbook}")
 
           request = Net::HTTP::Get.new('/#{cookbook.hash}')
           request['Cookie'] = "repose_ticket=#{cookbook.token}"
-          again? = true
-          while again?
+          again = true
+          while again
             begin
               connection.request(:server => server, :port => '80', :protocol => 'https',
                                  :request => request) do |result|
                 if result.kind_of?(Net::HTTPSuccess)
-                  again? = false
+                  again = false
                   tarball = Tempfile.new("tarball")
                   @audit.append_info("Success, now unarchiving")
                   result.read_body do |chunk|
@@ -256,7 +256,7 @@ module RightScale
                   @audit.append_info("Repose server unavailable; retrying", result.body)
                   server = find_repose_server(connection)
                 else
-                  again? = false
+                  again = false
                   report_failure("Unable to download cookbook #{cookbook}", result.to_s)
                 end
               end
@@ -280,10 +280,10 @@ module RightScale
     # address(String):: IP address of working repose server
     def find_repose_server(connection)
       loop do
-        possibles = Socket.getaddrinfo(@repose_server, 80, Socket::AF_INET, Socket::SOCK_STREAM,
+        possibles = Socket.getaddrinfo(@repose_servers.first, 80, Socket::AF_INET, Socket::SOCK_STREAM,
                                        Socket::IPPROTO_TCP)
         if possibles.empty?
-          RightLinkLog.warn("Unable to find any repose servers for #{@repose_server}; retrying")
+          RightLinkLog.warn("Unable to find any repose servers for #{@repose_servers.first}; retrying")
           sleep 10
           next
         end
@@ -297,7 +297,7 @@ module RightScale
           return address if result.kind_of?(HTTPSuccess)
         end
 
-        RightLinkLog.warn("All available repose servers for #{@repose_server} are down; retrying")
+        RightLinkLog.warn("All available repose servers for #{@repose_servers.inspect} are down; retrying")
         sleep 10
       end
     end
