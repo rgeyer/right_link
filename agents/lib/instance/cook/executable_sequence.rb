@@ -252,7 +252,7 @@ module RightScale
                     end
                   end
                   tarball.close(true)
-                elsif result.kind_of?(HTTPServiceUnavailable)
+                elsif result.kind_of?(HTTPServerError)
                   @audit.append_info("Repose server unavailable; retrying", result.body)
                   server = find_repose_server(connection)
                 else
