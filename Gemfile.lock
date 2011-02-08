@@ -1,6 +1,5 @@
 GEM
   remote: http://rubygems.org/
-  remote: http://gems.github.com/
   specs:
     SyslogLogger (1.4.0)
       hoe (>= 1.2.0)

@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'bundler'
+require 'rake'
 require 'spec/rake/spectask'
 require 'fileutils'
 
@@ -26,7 +29,7 @@ RAKE_SPEC_ORDER_FILE_PATH = ::File.join(RIGHT_BOT_ROOT, "rake_spec_order_list.tx
 # t<Spec::Rake::SpecTask>:: Configured task
 def setup_spec(t)
   t.spec_opts = ['--options', "\"#{RIGHT_BOT_ROOT}/spec/spec.opts\""]
-  t.spec_files = FileList["#{RIGHT_BOT_ROOT}/**/spec/**/*_spec.rb"]
+  t.spec_files = FileList["#{RIGHT_BOT_ROOT}/**/spec/**/*_spec.rb"].reject {|path| path =~ /vendor/}
 
   # optionally read or write spec order for debugging purposes. use a stubbed
   # file with the text "FILL ME" to get the spec ordering for the current

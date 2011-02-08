@@ -1,5 +1,4 @@
-source :gemcutter
-source 'http://gems.github.com'
+source :rubygems
 
 gem "systemu", "1.2.0"
 gem "stomp", "1.1"
