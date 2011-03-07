@@ -1,5 +1,3 @@
-source :rubygems
-
 gem "systemu", "1.2.0"
 gem "stomp", "1.1"
 gem "ruby-openid", "2.1.8"
