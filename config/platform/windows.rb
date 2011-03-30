@@ -623,6 +623,10 @@ module RightScale
       end
 
       class Rng
+        def initialize
+          srand(Process.pid + Time.now.to_i)
+        end
+
         def pseudorandom_bytes(count)
           bytes = ''
 
