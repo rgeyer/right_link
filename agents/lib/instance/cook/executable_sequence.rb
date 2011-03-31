@@ -211,6 +211,48 @@ module RightScale
       true
     end
 
+    # Download the given attachment using Repose.  Will throw
+    # exceptions in case of failure.
+    #
+    # === Parameters
+    # attachment(RightScale::Attachment):: attachment to download
+    # script_file_path(String):: destination pathname
+    #
+    # === Raise
+    # AttachmentDownloadFailure:: if some permanent failure occurred downloading the attachment
+    # ReposeDownloader::ReposeServerFailure:: if no Repose server could be contacted
+    # SystemCallError:: if the file cannot be created
+    #
+    # === Return
+    # always true
+    def download_using_repose(attachment, script_file_path)
+      begin
+        attachment_dir = File.dirname(script_file_path)
+        FileUtils.mkdir_p(attachment_dir)
+        dl = nil
+        if attachment.digest
+          dl = @repose_class.new('attachments/1', attachment.digest, attachment.token,
+                                 attachment.file_name, AttachmentDownloadFailure, @logger)
+        else
+          dl = @repose_class.new('attachments', attachment.to_hash, attachment.token,
+                                 attachment.file_name, AttachmentDownloadFailure, @logger)
+        end
+        tempfile = Tempfile.open('attachment', attachment_dir)
+        dl.request do |response|
+          response.read_body do |chunk|
+            tempfile << chunk
+          end
+        end
+        File.unlink(script_file_path) if File.exists?(script_file_path)
+        File.link(tempfile.path, script_file_path)
+        tempfile.close!
+        return true
+      rescue Exception => e
+        tempfile.close! unless tempfile.nil?
+        raise e
+      end
+    end
+
     # Install required software packages, update @ok
     # Always update the apt cache even if there is no package for recipes
     #
