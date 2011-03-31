@@ -1142,9 +1142,6 @@ EOF
 
         def pseudorandom_bytes(count)
           bytes = ''
-
-          srand #to give us a fighting chance at avoiding state-sync issues
-
           count.times do
             bytes << rand(0xff)
           end
