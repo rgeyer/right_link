@@ -74,13 +74,14 @@ module RightScale
       cmd[:tag] = options[:tag] if options[:tag]
       cmd[:tags] = options[:tags] if options[:tags]
       cmd[:query] = options[:query] if options[:query]
+      timeout = options[:timeout] || 20
       config_options = agent_options('instance')
       listen_port = config_options[:listen_port]
       fail('Could not retrieve agent listen port') unless listen_port
       command_serializer = Serializer.new
       client = CommandClient.new(listen_port, config_options[:cookie])
       begin
-        client.send_command(cmd, options[:verbose]) do |res|
+        client.send_command(cmd, options[:verbose], timeout) do |res|
           if options[:action] == :get_tags
             if res.empty?
               puts "No server tag found"
@@ -134,6 +135,10 @@ module RightScale
         opts.on('-q', '--query TAG_LIST') do |t|
           options[:action] = :query_tags
           options[:tags] = t.split
+        end
+
+        opts.on('-t', '--timeout TIMEOUT_SECONDS',  Integer) do |t|
+          options[:timeout] = t
         end
 
         opts.on('-v', '--verbose') do
