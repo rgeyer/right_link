@@ -126,9 +126,10 @@ module RightScale
       @@resource_uid = nil
       @@last_recorded_value = nil
       @@record_retries = 0
-      @@planned_volume_state = nil
-
       @@last_communication = 0
+      @@planned_volume_state = nil
+      @@shutdown_request = nil
+
       MapperProxy.instance.message_received { message_received } unless @@read_only
 
       dir = File.dirname(STATE_FILE)
@@ -282,6 +283,11 @@ module RightScale
         Platform.controller.shutdown unless res.success?
       end
       EM.add_timer(FORCE_SHUTDOWN_DELAY) { Platform.controller.shutdown }
+    end
+
+    # Current requested shutdown state, if any.
+    def self.shutdown_request
+      @@shutdown_request ||= ::RightScale::ShutdownManagement::ShutdownRequest.new
     end
 
     # Set startup tags
