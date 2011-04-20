@@ -27,7 +27,7 @@ gem "right_http_connection", "1.3.0"
 group :linux do
   gem "json", "1.4.6"
   gem "eventmachine", "0.12.10"
-  gem "right_popen", "1.0.11"
+  gem "right_popen", "1.0.9"
   gem "msgpack", "0.4.4"
 end
 
@@ -39,7 +39,7 @@ end
 group :windows do
   gem "json", "1.4.6"
   gem "eventmachine", "0.12.10"
-  gem "right_popen", "1.0.11"
+  gem "right_popen", "1.0.9"
   gem "msgpack", "0.4.4"
   gem "win32-api", "1.4.5"
   gem "windows-api", "0.4.0"
