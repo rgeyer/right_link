@@ -31,75 +31,9 @@ begin
   require 'windows/handle'
   require 'windows/security'
   require 'windows/system_info'
-  require 'windows/time'
-  require 'win32ole'
 rescue LoadError => e
   raise e if !!(RUBY_PLATFORM =~ /mswin/)
 end
-
-require 'fileutils'
-require 'tmpdir'
-
-# ohai 0.3.6 has a bug which causes WMI data to be imported using the default
-# Windows code page. the workaround is to set the win32ole gem's code page to
-# UTF-8, which is probably a good general Ruby on Windows practice in any case.
-WIN32OLE.codepage = WIN32OLE::CP_UTF8
-
-# monkey patch Time.now because Windows Ruby interpreters used the wrong API
-# and queried local time instead of UTC time prior to Ruby v1.9.1. This
-# made the Ruby 1.8.x interpreters vulnerable to external changes to
-# timezone which cause Time.now to return times which are offset from from the
-# correct value. This implementation is borrowed from the C source for Ruby
-# v1.9.1 from www.ruby-lang.org ("win32/win32.c").
-class Time
-  def self.now
-    # query UTC time as a 64-bit ularge value.
-    filetime = 0.chr * 8
-    ::Windows::Time::GetSystemTimeAsFileTime.call(filetime)
-    low_date_time = filetime[0,4].unpack('V')[0]
-    high_date_time = filetime[4,4].unpack('V')[0]
-    value = high_date_time * 0x100000000 + low_date_time
-
-    # value is now 100-nanosec intervals since 1601/01/01 00:00:00 UTC,
-    # convert it into UNIX time (since 1970/01/01 00:00:00 UTC).
-    value /= 10  # nanoseconds to microseconds
-    microseconds = 1000 * 1000
-    value -= ((1970 - 1601) * 365.2425).to_i * 24 * 60 * 60 * microseconds
-
-    return Time.at(value / microseconds, value % microseconds)
-  end
-end
-
-# win32/process monkey-patches the Process class but drops support for any kill
-# signals which are not directly portable. some signals are acceptable, if not
-# strictly portable. the 'TERM' signal used to be supported in Ruby v1.8.6 but
-# raises an exception in Ruby v1.8.7. we will monkey-patch the monkey-patch to
-# get the best possible implementation of signals.
-module Process
-  unless defined?(@@ruby_c_kill)
-    @@ruby_c_kill = method(:kill)
-
-    fail "Must require platform/win32 before win32/process" unless require 'win32/process'
-
-    @@win32_kill = method(:kill)
-
-    def self.kill(sig, *pids)
-      sig = 1 if 'TERM' == sig  # Signals 1 and 4-8 kill the process in a nice manner.
-      @@win32_kill.call(sig, *pids)
-    end
-
-    # implements getpgid() for Windws
-    def self.getpgid(pid)
-      # FIX: we currently only use this to check if the process is running.
-      # it is possible to get the parent process id for a process in Windows if
-      # we actually need this info.
-      return Process.kill(0, pid).contains?(pid) ? 0 : -1
-    rescue
-      raise Errno::ESRCH
-    end
-  end
-end
-
 
 module RightScale
   class Platform
@@ -1151,24 +1085,6 @@ EOF
       end
 
       protected
-
-      # internal class for querying OS version, etc.
-      class OSInformation
-        include ::Windows::SystemInfo
-
-        attr_reader :version, :major, :minor, :build
-
-        def initialize
-          @version = GetVersion()
-          @major = LOBYTE(LOWORD(version))
-          @minor = HIBYTE(LOWORD(version))
-          @build = HIWORD(version)
-        end
-      end
-
-    end
-  end
-end
 
       # internal class for querying OS version, etc.
       class OSInformation
