@@ -26,7 +26,6 @@ gem "right_http_connection", "1.3.0"
 
 group :linux do
   gem "json", "1.4.6"
-  gem "SyslogLogger", "1.4.0"
   gem "eventmachine", "0.12.10"
   gem "right_popen", "1.0.11"
   gem "msgpack", "0.4.4"
