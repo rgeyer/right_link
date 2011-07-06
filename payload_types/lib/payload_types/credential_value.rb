@@ -28,8 +28,8 @@ module RightScale
 
     include Serializable
 
-    # Universally-unique identifier for this credential value
-    attr_accessor :uuid
+    # Namespace-unique identifier for this credential value
+    attr_accessor :id
 
     # Last-modified timestamp for this credential value
     attr_accessor :modified_at
@@ -43,7 +43,7 @@ module RightScale
 
     # Initialize fields from given arguments
     def initialize(*args)
-      @uuid               = args[0] if args.size > 0
+      @id                 = args[0] if args.size > 0
       @modified_at        = args[1] if args.size > 1
       @envelope_mime_type = args[2] if args.size > 2
       @value              = args[3] if args.size > 3
@@ -51,7 +51,7 @@ module RightScale
 
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @uuid, @modified_at, @envelope_mime_type, @value ]
+      [ @id, @modified_at, @envelope_mime_type, @value ]
     end
   end
 end

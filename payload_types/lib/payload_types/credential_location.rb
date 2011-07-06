@@ -28,21 +28,21 @@ module RightScale
 
     include Serializable
 
-    # Universally-unique identifier of the credential that should be retrieved.
-    attr_accessor :credential_uuid
+    # Namespace within which the credential resides
+    attr_accessor :namespace
 
-    # Specific agent ID that can fulfill the credential-request operation.
-    attr_accessor :request_target
+    # Namespace-unique identifier of the credential that should be retrieved.
+    attr_accessor :credential_id
 
     # Initialize fields from given arguments
     def initialize(*args)
-      @credential_uuid = args[0] if args.size > 0
-      @request_target  = args[1] if args.size > 1
+      @namespace       = args[0] if args.size > 0
+      @credential_id   = args[1] if args.size > 1
     end
 
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @credential_uuid, @request_target ]
+      [ @namespace, @credential_id ]
     end
   end
 end
