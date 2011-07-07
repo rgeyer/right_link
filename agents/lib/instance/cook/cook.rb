@@ -71,10 +71,14 @@ module RightScale
       end
       EM.run do
         begin
+          gatherer = ExternalParameterGatherer.new(bundle.executables, options)
           AuditStub.instance.init(options)
+          gatherer.callback { sequence.run }
+          gatherer.errback { success = false; report_failure(sequence) }
           sequence.callback { success = true; send_inputs_patch(sequence) }
           sequence.errback { success = false; report_failure(sequence) }
-          EM.defer { sequence.run }
+
+          EM.defer { gatherer.run }
         rescue Exception => e
           fail('Execution failed', "Execution failed (#{e.message}) from\n#{e.backtrace.join("\n")}")
         end

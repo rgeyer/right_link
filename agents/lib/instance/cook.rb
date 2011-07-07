@@ -28,6 +28,7 @@
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'cook.rb'))
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'agent_connection.rb'))
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'audit_stub.rb'))
+require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'external_parameter_gatherer.rb'))
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'cook_state.rb'))
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'chef_state.rb'))
 require File.normalize_path(File.join(File.dirname(__FILE__), 'cook', 'executable_sequence.rb'))
