@@ -34,15 +34,19 @@ module RightScale
     # Namespace-unique identifier of the credential that should be retrieved.
     attr_accessor :credential_id
 
+    # Access token that should be used to fetch this credential
+    attr_accessor :access_token
+
     # Initialize fields from given arguments
     def initialize(*args)
       @namespace       = args[0] if args.size > 0
       @credential_id   = args[1] if args.size > 1
+      @access_token    = args[2] if args.size > 2
     end
 
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @namespace, @credential_id ]
+      [ @namespace, @credential_id, @access_token ]
     end
   end
 end
