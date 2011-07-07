@@ -39,6 +39,8 @@ module RightScale
       :send_retryable_request   => 'Send request to a remote agent with a response expected and retry if response times out',
       :send_persistent_request  => 'Send request to a remote agent with a response expected with persistence ' +
                                    'en route and no retries that would result in it being duplicated',
+      :send_idempotent_request  => 'Send a request to a remote agent (identified solely by operation), retrying at the' +
+                                   'application level until the request succeeds or the timeout elapses',
       :set_log_level            => 'Set log level to options[:level]',
       :get_log_level            => 'Get log level',
       :decommission             => 'Run instance decommission bundle synchronously',
@@ -216,6 +218,22 @@ module RightScale
     # true:: Always return true
     def send_persistent_request_command(opts)
       send_persistent_request(opts[:type], opts[:conn], opts[:payload], opts[:target], opts[:options])
+    end
+
+    # Send a retryable request to a single target with a response expected, retrying multiple times
+    # at the application layer in case failures or errors occur.
+    #
+    # === Parameters
+    # opts[:conn](EM::Connection):: Connection used to send reply
+    # opts[:type](String):: Request type
+    # opts[:payload](String):: Request data, optional
+    # opts[:timeout](Integer):: Timeout for idempotent request, -1 or nil for no timeout
+    # opts[:options](Hash):: Request options
+    #
+    # === Return
+    # true:: Always return true
+    def send_idempotent_request_command(opts)
+      send_idempotent_request(opts[:type], opts[:conn], opts[:payload], opts[:options])
     end
 
     # Set log level command
@@ -458,6 +476,19 @@ module RightScale
         CommandIO.instance.reply(conn, reply)
       end
       true
+    end
+
+    # Helper method to send a retryable (and therefore idempotent!) request to a single target with a response
+    # expected, retrying at the application layer until the request succeeds or the timeout elapses; default
+    # timeout is 'forever'.
+    #
+    # See IdempotentRequest for details
+    def send_idempotent_request(type, conn, payload=nil, opts={})
+      req = IdempotentRequest.new(type, payload, opts)
+      req.callback do |response|
+        reply = JSON.dump(response) rescue '\"Failed to serialize response\"'
+        CommandIO.instance.reply(conn, reply)
+      end
     end
 
     # Stats command
