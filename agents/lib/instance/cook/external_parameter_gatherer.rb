@@ -66,6 +66,8 @@ module RightScale
 
     #TODO docs
     def run
+      succeed(@executables_inputs) if done? #we might not have ANY credentials...
+
       @executables_inputs.each_pair do |exe, locations|
         locations.each do |location|
           cmd = {:name => :send_retryable_request,
