@@ -472,7 +472,7 @@ module RightScale
       payload ||= {}
       payload[:agent_identity] = @agent_identity
       MapperProxy.instance.send_persistent_request(type, payload, target, opts.merge(:offline_queueing => true)) do |r|
-        reply = JSON.dump(r) rescue '\"Failed to serialize response\"'
+        reply = @serializer.dump(r) rescue '\"Failed to serialize response\"'
         CommandIO.instance.reply(conn, reply)
       end
       true
@@ -485,10 +485,22 @@ module RightScale
     # See IdempotentRequest for details
     def send_idempotent_request(type, conn, payload=nil, opts={})
       req = IdempotentRequest.new(type, payload, opts)
-      req.callback do |response|
-        reply = JSON.dump(response) rescue '\"Failed to serialize response\"'
+
+      callback = Proc.new do |content|
+        result = OperationResult.success(content)
+        reply = @serializer.dump(result) rescue '\"Failed to serialize response\"'
         CommandIO.instance.reply(conn, reply)
       end
+
+      errback = Proc.new do |content|
+        result = OperationResult.error(content)
+        reply = @serializer.dump(result) rescue '\"Failed to serialize response\"'
+        CommandIO.instance.reply(conn, reply)
+      end
+
+      req.callback(&callback)
+      req.errback(&errback)
+      req.run
     end
 
     # Stats command
