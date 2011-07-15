@@ -34,6 +34,133 @@ module RightScale
   describe ExternalParameterGatherer do
     include SpecHelpers
 
-    it 'should have test coverage'
+    def run(gatherer)
+      flexmock(AuditStub.instance).should_receive(:create_new_section).and_return(true).by_default
+      flexmock(AuditStub.instance).should_receive(:append_info).and_return(true).by_default
+      flexmock(AuditStub.instance).should_receive(:append_error).and_return(true).by_default
+      flexmock(AuditStub.instance).should_receive(:update_status).and_return(true).by_default
+
+      result = nil
+      gatherer.callback { result = true ; EM.stop }
+      gatherer.errback { result = false ; EM.stop }
+      EM.run { EM.defer {  gatherer.run } }
+      result
+    end
+
+    def cred_location(index)
+      CredentialLocation.new(777, 123+index, 'open sesame')
+    end
+
+    def cred_value(index)
+      CredentialValue.new(123+index, 0, nil, 'mooo')
+    end
+
+    before(:each) do
+      @serializer = Serializer.new
+
+      @script  = RightScriptInstantiation.new
+      @script.nickname  = 'Some Script!'
+      @script.ready = true
+      @script.parameters  = {'TEXT1' => 'this is cool', 'TEXT2' => 'this is cooler'}
+      @script.source  = "#!/bin/bash\necho $TEXT1 $TEXT2"
+      @script.attachments = []
+
+      @recipe = RecipeInstantiation.new
+      @recipe.nickname = 'db_hitchhikers_guide::install'
+      @recipe.id = nil #Not a RightScript...
+      @recipe.ready = true
+      @recipe.attributes = {'so_long' => 'thanks for all the fish', 'has_towel' => 'true'}
+
+      @options = {:cookie=>'chocolate chip', :listen_port=>'4242'}
+    end
+
+    context 'given no credentials' do
+      it 'succeeds immediately' do
+        @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
+        @gatherer = ExternalParameterGatherer.new(@bundle, @options)
+        run(@gatherer).should == true
+      end
+    end
+
+    context 'given credential locations' do
+      context 'when fatal errors occur' do
+        it 'fails gracefully' do
+          creds = []
+          (0..2).each { |j| creds << cred_location(j) }
+          script = @script.dup
+          script.external_parameters = {}
+          recipe = @recipe.dup
+          recipe.external_attributes = {}
+          creds.each_with_index do |cred, j|
+            p = "SECRET_CRED#{j}"
+            script.external_parameters[p] = cred
+            recipe.external_attributes[p] = cred
+          end
+
+          @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
+          @bundle.executables << script
+          @bundle.executables << recipe
+
+          @gatherer = ExternalParameterGatherer.new(@bundle, @options)
+
+          [0, 1].each do |j|
+            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
+            data = @serializer.dump(OperationResult.success([ cred_value(j) ]))
+            flexmock(@gatherer).should_receive(:send_idempotent_request).
+              with('/vault/get', payload, Proc).and_yield(data).twice
+          end
+
+          [2].each do |j|
+            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
+            data = @serializer.dump(OperationResult.error('too many cows on the moon'))
+            flexmock(@gatherer).should_receive(:send_idempotent_request).
+              with('/vault/get', payload, Proc).and_yield(data).twice
+          end
+
+          run(@gatherer).should == false
+          @gatherer.failure_title.should_not be_empty
+          @gatherer.failure_message.should_not be_empty
+        end
+      end
+
+      [1, 3, 10].each do |i|
+        it "handles #{i} credentials" do
+
+          creds = []
+          (0...i).each { |j| creds << cred_location(j) }
+          script = @script.dup
+          script.external_parameters = {}
+          recipe = @recipe.dup
+          recipe.external_attributes = {}
+          creds.each_with_index do |cred, j|
+            p = "SECRET_CRED#{j}"
+            script.external_parameters[p] = cred
+            recipe.external_attributes[p] = cred
+          end
+
+          @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
+          @bundle.executables << script
+          @bundle.executables << recipe
+
+          @gatherer = ExternalParameterGatherer.new(@bundle, @options)
+          creds.each_with_index do |cred, j|
+            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
+            data = @serializer.dump(OperationResult.success([ cred_value(j) ]))
+            flexmock(@gatherer).should_receive(:send_idempotent_request).
+              with('/vault/get', payload, Proc).and_yield(data).twice
+          end
+
+          run(@gatherer).should == true
+          @bundle.executables.each do |exe|
+            case exe
+              when RecipeInstantiation
+                exe.attributes.values.count { |x| x == 'mooo' }.should == i
+              when RightScriptInstantiation
+                exe.parameters.values.count { |x| x == 'mooo' }.should == i
+            end
+          end
+        end
+      end
+    end
   end
 end

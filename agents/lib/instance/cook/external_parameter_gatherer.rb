@@ -50,9 +50,9 @@ module RightScale
       bundle.executables.each do |exe|
         case exe
           when RightScale::RecipeInstantiation
-            externals = exe.external_attributes.dup
+            externals = (exe.external_attributes || []).dup
           when RightScale::RightScriptInstantiation
-            externals = exe.external_parameters.dup
+            externals = (exe.external_parameters || []).dup
           else
             raise ArgumentError, "Can't process external parameters for a #{exe.class.name}"
         end
@@ -64,9 +64,26 @@ module RightScale
 
     #TODO docs
     def run
-      succeed_if_done #we might not have ANY external parameters!
+      if done?
+        #we might not have ANY external parameters!
+        report_success
+        return true
+      end
 
       @audit.create_new_section('Retrieving credentials')
+
+      #Preflight to check validity of cred objects
+      ok = true
+      @executables_inputs.each_pair do |exe, inputs|
+        inputs.each_pair do |name, location|
+          next if location.is_a?(RightScale::CredentialLocation)
+          msg = "The provided credential (#{location.class.name}) is incompatible with this version of RightLink"
+          report_failure('Cannot process credential', msg)
+          ok = false
+        end
+      end
+
+      return false unless ok
 
       @executables_inputs.each_pair do |exe, inputs|
         inputs.each_pair do |name, location|
@@ -75,7 +92,6 @@ module RightScale
             :namespace => location.namespace,
             :credential_ids => [location.credential_id]
           }
-
           self.send_idempotent_request('/vault/get', payload) do |data|
             handle_response(exe, name, location, data)
           end
@@ -92,11 +108,13 @@ module RightScale
       if result.success?
         #Since we only ask for one credential at a time, we can do this...
         credential_value = result.content.first
-
         if credential_value.envelope_mime_type.nil?
           @executables_inputs[exe][name] = credential_value
           @audit.append_info("Got #{name} of '#{exe.nickname}'; #{count_remaining} remain.")
-          succeed_if_done
+          if done?
+            @audit.append_info("All credential values have been retrieved and processed.")
+            report_success
+          end
         else
           # The call succeeded but we can't process the credential value
           msg = "The #{name} input of '#{exe.nickname}' was retrieved from the external source, but its type " +
@@ -113,17 +131,19 @@ module RightScale
       report_failure('Unexpected error while retrieving credentials', msg, e)
     end
 
+    # Return the number of credentials remaining to be gathered
     def count_remaining
       count = @executables_inputs.values.map { |a| a.values.count { |p| not p.is_a?(RightScale::CredentialValue) } }
-      return count.inject { |sum,x| sum + x }
+      return count.inject { |sum,x| sum + x } || 0
     end
 
-    # Determine if all credentials have been gathered; if so, transform the executable bundle by filling in
-    # the missing credentials and set our Deferrable disposition to success so our caller gets notified via
-    # callback.
-    def succeed_if_done
-      return false unless count_remaining == 0
+    # Sugar for count_remaining == 0
+    def done?
+      count_remaining == 0
+    end
 
+    # Do the actual substitution of credential values into the bundle
+    def substitute_parameters
       @executables_inputs.each_pair do |exe, inputs|
         inputs.each_pair do |name, value|
           case exe
@@ -134,10 +154,12 @@ module RightScale
           end
         end
       end
+    end
 
-      @audit.append_info("All credential values have been retrieved and processed.")
+    # Report the completion of a successful run by updating our Deferrable disposition.
+    def report_success
+      substitute_parameters
       EM.next_tick { succeed }
-      return true
     end
 
     # Report a failure by setting some attributes that our caller will query, then updating our Deferrable
@@ -148,11 +170,9 @@ module RightScale
                            "#{exception.class.name}: #{exception.message} (#{exception.backtrace.first})")
       end
 
-      return if @failed #only the first failure counts...
       @failure_title   = title
       @failure_message = message
       EM.next_tick { fail }
-      @failed = true
     end
 
     # Use the command protocol to send an idempotent request. This class cannot reuse Cook's
