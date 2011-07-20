@@ -44,15 +44,16 @@ module RightScale
       gatherer.callback { result = true ; EM.stop }
       gatherer.errback { result = false ; EM.stop }
       EM.run { EM.defer {  gatherer.run } }
+
       result
     end
 
-    def cred_location(index)
-      CredentialLocation.new(777, 123+index, 'open sesame')
+    def secure_document_location(index)
+      SecureDocumentLocation.new('777', (123+index).to_s, 12345, 'open sesame')
     end
 
-    def cred_value(index)
-      CredentialValue.new(123+index, 0, nil, 'mooo')
+    def secure_document(index)
+      SecureDocument.new((123+index).to_s, 12345, 'shh, top secret!', 'default', 'text/plain', nil)
     end
 
     before(:each) do
@@ -78,7 +79,10 @@ module RightScale
       it 'succeeds immediately' do
         @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
         @gatherer = ExternalParameterGatherer.new(@bundle, @options)
-        run(@gatherer).should == true
+        result = run(@gatherer)
+        @gatherer.failure_title.should be_nil
+        @gatherer.failure_message.should be_nil
+        result.should be_true
       end
     end
 
@@ -86,15 +90,15 @@ module RightScale
       context 'when fatal errors occur' do
         it 'fails gracefully' do
           creds = []
-          (0..2).each { |j| creds << cred_location(j) }
+          (0..2).each { |j| creds << secure_document_location(j) }
           script = @script.dup
-          script.external_parameters = {}
+          script.external_inputs = {}
           recipe = @recipe.dup
-          recipe.external_attributes = {}
+          recipe.external_inputs = {}
           creds.each_with_index do |cred, j|
             p = "SECRET_CRED#{j}"
-            script.external_parameters[p] = cred
-            recipe.external_attributes[p] = cred
+            script.external_inputs[p] = cred
+            recipe.external_inputs[p] = cred
           end
 
           @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
@@ -104,22 +108,23 @@ module RightScale
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
 
           [0, 1].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
-            data = @serializer.dump(OperationResult.success([ cred_value(j) ]))
+            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
+            data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/get', payload, Proc).and_yield(data).twice
           end
 
           [2].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
+            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.error('too many cows on the moon'))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/get', payload, Proc).and_yield(data).twice
           end
 
-          run(@gatherer).should == false
-          @gatherer.failure_title.should_not be_empty
-          @gatherer.failure_message.should_not be_empty
+          result = run(@gatherer)
+          @gatherer.failure_title.should_not be_nil
+          @gatherer.failure_message.should_not be_nil
+          result.should be_false
         end
       end
 
@@ -127,15 +132,15 @@ module RightScale
         it "handles #{i} credentials" do
 
           creds = []
-          (0...i).each { |j| creds << cred_location(j) }
+          (0...i).each { |j| creds << secure_document_location(j) }
           script = @script.dup
-          script.external_parameters = {}
+          script.external_inputs = {}
           recipe = @recipe.dup
-          recipe.external_attributes = {}
+          recipe.external_inputs = {}
           creds.each_with_index do |cred, j|
             p = "SECRET_CRED#{j}"
-            script.external_parameters[p] = cred
-            recipe.external_attributes[p] = cred
+            script.external_inputs[p] = cred
+            recipe.external_inputs[p] = cred
           end
 
           @bundle = ExecutableBundle.new([@script, @recipe], [], 1234)
@@ -144,19 +149,23 @@ module RightScale
 
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
           creds.each_with_index do |cred, j|
-            payload = {:access_token=>'open sesame', :namespace=>777, :credential_ids=>[123+j]}
-            data = @serializer.dump(OperationResult.success([ cred_value(j) ]))
+            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
+            data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/get', payload, Proc).and_yield(data).twice
           end
 
-          run(@gatherer).should == true
+          result = run(@gatherer)
+          @gatherer.failure_title.should be_nil
+          @gatherer.failure_message.should be_nil
+          result.should be_true
+
           @bundle.executables.each do |exe|
             case exe
               when RecipeInstantiation
-                exe.attributes.values.count { |x| x == 'mooo' }.should == i
+                exe.attributes.values.count { |x| x == 'shh, top secret!' }.should == i
               when RightScriptInstantiation
-                exe.parameters.values.count { |x| x == 'mooo' }.should == i
+                exe.parameters.values.count { |x| x == 'shh, top secret!' }.should == i
             end
           end
         end

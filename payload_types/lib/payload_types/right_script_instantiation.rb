@@ -50,8 +50,8 @@ module RightScale
     # (Boolean) Whether script inputs are ready
     attr_accessor :ready
 
-    # (Array of CredentialLocation) attributes that must be resolved by the instance
-    attr_accessor :external_parameters
+    # (Array of SecureDocumentLocation) attributes that must be resolved by the instance
+    attr_accessor :external_inputs
 
     def initialize(*args)
       @nickname             = args[0] if args.size > 0

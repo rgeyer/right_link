@@ -48,17 +48,9 @@ module RightScale
       @executables_inputs = {}
 
       bundle.executables.each do |exe|
-        case exe
-          when RightScale::RecipeInstantiation
-            externals = (exe.external_attributes || []).dup
-          when RightScale::RightScriptInstantiation
-            externals = (exe.external_parameters || []).dup
-          else
-            raise ArgumentError, "Can't process external parameters for a #{exe.class.name}"
-        end
+        externals = exe.external_inputs
         next if externals.nil? || externals.empty?
-
-        @executables_inputs[exe] = externals
+        @executables_inputs[exe] = externals.dup
       end
     end
 
@@ -76,9 +68,9 @@ module RightScale
       ok = true
       @executables_inputs.each_pair do |exe, inputs|
         inputs.each_pair do |name, location|
-          next if location.is_a?(RightScale::CredentialLocation)
+          next if location.is_a?(RightScale::SecureDocumentLocation)
           msg = "The provided credential (#{location.class.name}) is incompatible with this version of RightLink"
-          report_failure('Cannot process credential', msg)
+          report_failure('Cannot process external input', msg)
           ok = false
         end
       end
@@ -90,7 +82,7 @@ module RightScale
           payload = {
             :access_token => location.access_token,
             :namespace => location.namespace,
-            :credential_ids => [location.credential_id]
+            :credential_ids => [location.name]
           }
           self.send_idempotent_request('/vault/get', payload) do |data|
             handle_response(exe, name, location, data)
@@ -107,9 +99,9 @@ module RightScale
 
       if result.success?
         #Since we only ask for one credential at a time, we can do this...
-        credential_value = result.content.first
-        if credential_value.envelope_mime_type.nil?
-          @executables_inputs[exe][name] = credential_value
+        secure_document = result.content.first
+        if secure_document.envelope_mime_type.nil?
+          @executables_inputs[exe][name] = secure_document
           @audit.append_info("Got #{name} of '#{exe.nickname}'; #{count_remaining} remain.")
           if done?
             @audit.append_info("All credential values have been retrieved and processed.")
@@ -118,7 +110,7 @@ module RightScale
         else
           # The call succeeded but we can't process the credential value
           msg = "The #{name} input of '#{exe.nickname}' was retrieved from the external source, but its type " +
-                "(#{result.content.envelope_mime_type}) is incompatible with this version of RightLink."
+                "(#{secure_document.envelope_mime_type}) is incompatible with this version of RightLink."
           report_failure('Cannot process credential', msg)
         end
       else # We got a result, but it was a failure...
@@ -133,7 +125,7 @@ module RightScale
 
     # Return the number of credentials remaining to be gathered
     def count_remaining
-      count = @executables_inputs.values.map { |a| a.values.count { |p| not p.is_a?(RightScale::CredentialValue) } }
+      count = @executables_inputs.values.map { |a| a.values.count { |p| not p.is_a?(RightScale::SecureDocument) } }
       return count.inject { |sum,x| sum + x } || 0
     end
 
@@ -148,9 +140,9 @@ module RightScale
         inputs.each_pair do |name, value|
           case exe
             when RightScale::RecipeInstantiation
-              exe.attributes[name] = value.value
+              exe.attributes[name] = value.content
             when RightScale::RightScriptInstantiation
-              exe.parameters[name] = value.value
+              exe.parameters[name] = value.content
           end
         end
       end

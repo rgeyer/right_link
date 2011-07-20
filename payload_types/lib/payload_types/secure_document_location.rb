@@ -23,35 +23,34 @@
 
 module RightScale
 
-  # Class encapsulating the actual value of a credential.
-  class CredentialValue
+  # Everything necessary to retrieve a SecureDocument from a RightNet agent.
+  class SecureDocumentLocation
 
     include Serializable
 
-    # Namespace-unique identifier for this credential value
-    attr_accessor :id
+    # (String) Namespace within which the document resides
+    attr_accessor :namespace
 
-    # Last-modified timestamp for this credential value
-    attr_accessor :modified_at
+    # (String) )Namespace-unique identifier of the document that should be retrieved.
+    attr_accessor :name
 
-    # (String) MIME type of the value's envelope, e.g. an encoding or encryption format,
-    # or nil if there is no envelope MIME type.
-    attr_accessor :envelope_mime_type
+    # (Integer) Monotonic version of the document to be requested
+    attr_accessor :version
 
-    # The value (content) of this credential.
-    attr_accessor :value
+    # (String) Access token that should be used to fetch this credential
+    attr_accessor :access_token
 
     # Initialize fields from given arguments
     def initialize(*args)
-      @id                 = args[0] if args.size > 0
-      @modified_at        = args[1] if args.size > 1
-      @envelope_mime_type = args[2] if args.size > 2
-      @value              = args[3] if args.size > 3
+      @namespace    = args[0] if args.size > 0
+      @name         = args[1] if args.size > 1
+      @version      = args[2] if args.size > 2
+      @access_token = args[3] if args.size > 3
     end
 
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @id, @modified_at, @envelope_mime_type, @value ]
+      [ @namespace, @name, @version, @access_token ]
     end
   end
 end
