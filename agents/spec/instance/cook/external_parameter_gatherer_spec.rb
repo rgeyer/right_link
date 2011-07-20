@@ -108,17 +108,17 @@ module RightScale
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
 
           [0, 1].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
+            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
-              with('/vault/get', payload, Proc).and_yield(data).twice
+              with('/vault/read_document', payload, Proc).and_yield(data).twice
           end
 
           [2].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
+            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.error('too many cows on the moon'))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
-              with('/vault/get', payload, Proc).and_yield(data).twice
+              with('/vault/read_document', payload, Proc).and_yield(data).twice
           end
 
           result = run(@gatherer)
@@ -149,10 +149,10 @@ module RightScale
 
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
           creds.each_with_index do |cred, j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :credential_ids=>[ (123+j).to_s ]}
+            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
-              with('/vault/get', payload, Proc).and_yield(data).twice
+              with('/vault/read_document', payload, Proc).and_yield(data).twice
           end
 
           result = run(@gatherer)

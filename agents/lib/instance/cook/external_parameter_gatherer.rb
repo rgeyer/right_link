@@ -82,9 +82,9 @@ module RightScale
           payload = {
             :access_token => location.access_token,
             :namespace => location.namespace,
-            :credential_ids => [location.name]
+            :names => [location.name]
           }
-          self.send_idempotent_request('/vault/get', payload) do |data|
+          self.send_idempotent_request('/vault/read_document', payload) do |data|
             handle_response(exe, name, location, data)
           end
         end
