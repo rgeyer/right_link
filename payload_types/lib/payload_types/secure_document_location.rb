@@ -38,19 +38,19 @@ module RightScale
     attr_accessor :version
 
     # (String) Access token that should be used to fetch this credential
-    attr_accessor :access_token
+    attr_accessor :ticket
 
     # Initialize fields from given arguments
     def initialize(*args)
-      @namespace    = args[0] if args.size > 0
-      @name         = args[1] if args.size > 1
-      @version      = args[2] if args.size > 2
-      @access_token = args[3] if args.size > 3
+      @namespace = args[0] if args.size > 0
+      @name      = args[1] if args.size > 1
+      @version   = args[2] if args.size > 2
+      @ticket    = args[3] if args.size > 3
     end
 
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @namespace, @name, @version, @access_token ]
+      [ @namespace, @name, @version, @ticket ]
     end
   end
 end

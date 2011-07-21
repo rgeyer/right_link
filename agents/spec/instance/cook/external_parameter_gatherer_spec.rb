@@ -108,14 +108,14 @@ module RightScale
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
 
           [0, 1].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
+            payload = {:ticket=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/read_document', payload, Proc).and_yield(data).twice
           end
 
           [2].each do |j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
+            payload = {:ticket=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.error('too many cows on the moon'))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/read_document', payload, Proc).and_yield(data).twice
@@ -149,7 +149,7 @@ module RightScale
 
           @gatherer = ExternalParameterGatherer.new(@bundle, @options)
           creds.each_with_index do |cred, j|
-            payload = {:access_token=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
+            payload = {:ticket=>'open sesame', :namespace=>'777', :names=>[ (123+j).to_s ]}
             data = @serializer.dump(OperationResult.success([ secure_document(j) ]))
             flexmock(@gatherer).should_receive(:send_idempotent_request).
               with('/vault/read_document', payload, Proc).and_yield(data).twice

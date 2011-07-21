@@ -80,7 +80,7 @@ module RightScale
       @executables_inputs.each_pair do |exe, inputs|
         inputs.each_pair do |name, location|
           payload = {
-            :access_token => location.access_token,
+            :ticket => location.ticket,
             :namespace => location.namespace,
             :names => [location.name]
           }
