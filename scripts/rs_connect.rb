@@ -1,5 +1,6 @@
+#!/opt/rightscale/sandbox/bin/ruby
 #
-# Copyright (c) 2009 RightScale Inc
+# Copyright (c) 2011 RightScale Inc
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -20,21 +21,16 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require 'mixlib/config'
-require File.join(File.dirname(__FILE__), 'platform')
-RightScale::Platform.load_platform_specific # To define 'File.normalize_path'
+# rs_reboot --help for usage information
+#
+# See lib/shutdown_client.rb for additional information.
 
-module RightScale
+THIS_FILE = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
+$:.push(File.join(File.dirname(THIS_FILE), 'lib'))
 
-  # RightLink global configuration options
-  class RightLinkConfig
-    extend Mixlib::Config
-  end
+require 'rubygems'
+require 'server_importer'
 
-  # Initialize platform
-  RightLinkConfig[:platform] = Platform
-
-  # Initialized from content of 'config.rb'
-  # Modify 'config.rb' and not this file!
-  RightLinkConfig.from_file(File.join(File.dirname(__FILE__), 'config.rb'))
-end
+manager = RightScale::ServerImporter.new
+options = manager.parse_args
+manager.run(options)

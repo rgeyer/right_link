@@ -67,7 +67,7 @@ describe RightScale::MetadataSources::FileMetadataSource do
   # result(Hash):: Hash-like leaf value
   def create_user_metadata_leaf(tree_climber, data)
     result = tree_climber.create_branch
-    ::RightScale::CloudUtilities::split_metadata(data, "\n", result)
+    ::RightScale::CloudUtilities.split_metadata(data, "\n", result)
     result
   end
 
@@ -79,10 +79,10 @@ describe RightScale::MetadataSources::FileMetadataSource do
     @user_metadata_source_file_path = File.join(@source_dir_path, 'user_metadata.dict')
     @metadata_source = ::RightScale::MetadataSources::FileMetadataSource.new(:cloud_metadata_source_file_path => @cloud_metadata_source_file_path,
                                                                            :user_metadata_source_file_path => @user_metadata_source_file_path)
-    cloud_metadata_tree_climber = ::RightScale::MetadataTreeClimber.new(:root_path => ::RightScale::MetadataSources::FileMetadataSource::CLOUD_METADATA_ROOT_PATH,
+    cloud_metadata_tree_climber = ::RightScale::MetadataTreeClimber.new(:root_path => ::RightScale::MetadataSources::FileMetadataSource::DEFAULT_CLOUD_METADATA_ROOT_PATH,
                                                                         :has_children_override => lambda{ false },
                                                                         :create_leaf_override => method(:create_user_metadata_leaf))
-    user_metadata_tree_climber = ::RightScale::MetadataTreeClimber.new(:root_path => ::RightScale::MetadataSources::FileMetadataSource::USER_METADATA_ROOT_PATH,
+    user_metadata_tree_climber = ::RightScale::MetadataTreeClimber.new(:root_path => ::RightScale::MetadataSources::FileMetadataSource::DEFAULT_USER_METADATA_ROOT_PATH,
                                                                        :has_children_override => lambda{ false },
                                                                        :create_leaf_override => method(:create_user_metadata_leaf))
     # cloud metadata
@@ -109,14 +109,14 @@ describe RightScale::MetadataSources::FileMetadataSource do
 
   def verify_cloud_metadata(cloud_metadata)
     data = ::RightScale::FileMetadataSourceSpec::CLOUD_METADATA_FILE_TEXT
-    compare_hash = ::RightScale::CloudUtilities::split_metadata(data, "\n", {})
+    compare_hash = ::RightScale::CloudUtilities.split_metadata(data, "\n", {})
 
     cloud_metadata.should == compare_hash
   end
 
   def verify_user_metadata(user_metadata)
     data = ::RightScale::FileMetadataSourceSpec::USER_METADATA_FILE_TEXT
-    compare_hash = ::RightScale::CloudUtilities::split_metadata(data, "\n", {})
+    compare_hash = ::RightScale::CloudUtilities.split_metadata(data, "\n", {})
 
     user_metadata.should == compare_hash
   end
