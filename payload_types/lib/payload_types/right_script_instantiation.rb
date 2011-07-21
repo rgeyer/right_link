@@ -54,19 +54,19 @@ module RightScale
     attr_accessor :external_inputs
 
     def initialize(*args)
-      @nickname             = args[0] if args.size > 0
-      @source               = args[1] if args.size > 1
-      @parameters           = args[2] if args.size > 2
-      @attachments          = args[3] if args.size > 3
-      @packages             = args[4] if args.size > 4
-      @id                   = args[5] if args.size > 5
-      @ready                = args[6] if args.size > 6
-      @external_parameters  = args[7] if args.size > 7
+      @nickname        = args[0] if args.size > 0
+      @source          = args[1] if args.size > 1
+      @parameters      = args[2] if args.size > 2
+      @attachments     = args[3] if args.size > 3
+      @packages        = args[4] if args.size > 4
+      @id              = args[5] if args.size > 5
+      @ready           = args[6] if args.size > 6
+      @external_inputs = args[7] if args.size > 7
     end
     
     # Array of serialized fields given to constructor
     def serialized_members
-      [ @nickname, @source, @parameters, @attachments, @packages, @id, @ready, @external_parameters ]
+      [ @nickname, @source, @parameters, @attachments, @packages, @id, @ready, @external_inputs ]
     end
     
   end
