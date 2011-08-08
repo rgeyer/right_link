@@ -23,6 +23,8 @@
 require 'rubygems'
 require File.join(File.dirname(__FILE__), 'stats_helper')
 
+require 'amqp'
+
 class MQ
   class Queue
     # Asks the broker to redeliver all unacknowledged messages on a
@@ -171,10 +173,8 @@ MQ::Queue.class_eval do
   end
 end
 
+# Monkey patch AMQP reconnect backoff
 begin
-  # Monkey patch AMQP reconnect backoff
-  require 'amqp'
-
   AMQP::Client.module_eval do
     def initialize opts = {}
       @settings = opts
@@ -239,6 +239,52 @@ begin
       end
     end
   end
+
+  # Monkey patch AMQP to support SOCKS proxy
+  AMQP::Client.module_eval do
+    require 'em-socksify'
+
+    include EM::Socksify
+
+    def self.socks_server ; @socks_server ; end
+    def self.socks_server=(s) ; @socks_server = s ; end
+    def self.socks_port ; @socks_port ; end
+    def self.socks_port=(s) ; @socks_port = s ; end
+
+    def self.connect(options = nil)
+      case options
+      when String
+        opts = parse_amqp_url(options)
+      when Hash
+        opts = options
+      else
+        opts = {}
+      end
+
+      opts = AMQP.settings.merge(opts)
+
+      if self.socks_server
+        EM.connect self.socks_server, self.socks_port, self, opts
+      else
+        EM.connect opts[:host], opts[:port], self, opts
+      end
+    end
+
+    alias :orig_connection_completed :connection_completed
+    def connection_completed
+      if AMQP::Client.socks_server
+        socksify(@settings[:host], @settings[:port]) do
+          orig_connection_completed
+        end
+      else
+        orig_connection_completed
+      end
+    end
+  end
+  #TODO fix horrible hack!!!!!!!!!!!!!!!!!!!
+  ::AMQP::Client.socks_server = '10.254.175.51'
+  ::AMQP::Client.socks_port   = 1080
+
 
   # This monkey patch catches exceptions that would otherwise cause EM to stop or be in a bad
   # state if a top level EM error handler was setup. Instead close the connection and leave EM
