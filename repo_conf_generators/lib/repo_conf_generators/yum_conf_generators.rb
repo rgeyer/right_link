@@ -63,19 +63,19 @@ module Yum
 
     # The AddOns repository is used in CentOS 5 but not in 6+.
     class AddOns
-      # Support CentOS 6 by NOT generating AddOns repo.
-      unless get_enterprise_linux_version.to_i >= 6 
-        def self.generate(description, base_urls, frozen_date="latest")
-          opts = {:repo_filename => "CentOS-addons",
+      def self.generate(description, base_urls, frozen_date="latest")
+        # Support CentOS 6+ by NOT generating AddOns repo.
+        return unless Yum::Epel::get_enterprise_linux_version.to_i < 6
+
+        opts = {:repo_filename => "CentOS-addons",
                   :repo_name => "addons",
                   :repo_subpath => "addons",
                   :description => description,
                   :base_urls => base_urls,
                   :frozen_date => frozen_date,
                   :enabled => true }
-          opts[:frozen_date] = frozen_date || "latest" # Optional frozen date
-          Yum::CentOS::abstract_generate(opts)
-        end
+        opts[:frozen_date] = frozen_date || "latest" # Optional frozen date
+        Yum::CentOS::abstract_generate(opts)
       end
     end
 
@@ -123,7 +123,7 @@ module Yum
     else
       repo_path = "#{ver}/#{opts[:repo_subpath]}/#{arch}/archive/"+opts[:frozen_date]
     end
-    
+
     mirror_list =  opts[:base_urls].map do |bu|
         bu +='/' unless bu[-1..-1] == '/' # ensure the base url is terminated with a '/'
         bu+repo_path
@@ -145,9 +145,9 @@ END
     mirror_list
     end
 
-    def self.is_this_centos?    
+    def self.is_this_centos?
       distributor_id = Yum::execute("lsb_release --id")
-      puts "This is not a CentOS distribution: [#{distributor_id}]" if distributor_id !~ /CentOS/ 
+      puts "This is not a CentOS distribution: [#{distributor_id}]" if distributor_id !~ /CentOS/
       distributor_id =~ /CentOS/ # return true if the distributor matches centos, false otherwise
     rescue Exception => e
       puts "This is not a CentOS distribution: #{e}"
