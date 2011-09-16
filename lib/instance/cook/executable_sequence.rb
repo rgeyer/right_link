@@ -86,6 +86,10 @@ module RightScale
       recipes                 = bundle.executables.map    { |e| e.is_a?(RecipeInstantiation) ? e : @right_scripts_cookbook.recipe_from_right_script(e) }
       @cookbooks              = bundle.cookbooks
       @thread_name            = bundle.thread_name
+first_executable = bundle.executables.first
+if first_executable.kind_of?(::RightScale::RightScriptInstantiation) && first_executable.parameters.has_key?("THREAD_NAME")
+  @thread_name = first_executable.parameters["THREAD_NAME"]
+end
       @downloader             = Downloader.new
       @download_path          = AgentConfig.cookbook_download_dir
       @powershell_providers   = nil

@@ -45,6 +45,10 @@ module RightScale
       fail('Missing bundle', 'No bundle to run') if input.blank?
       bundle = load(input, 'Invalid bundle', :json)
       @thread_name = bundle.thread_name
+first_executable = bundle.executables.first
+if first_executable.kind_of?(::RightScale::RightScriptInstantiation) && first_executable.parameters.has_key?("THREAD_NAME")
+  @thread_name = first_executable.parameters["THREAD_NAME"]
+end
 
       # 2. Load configuration settings
       options = OptionsBag.load

@@ -47,6 +47,12 @@ module RightScale
       @audit = audit
       @decommission = decommission
       @thread_name = payload.respond_to?(:thread_name) ? payload.thread_name : ::RightScale::ExecutableBundle::DEFAULT_THREAD_NAME
+if payload.kind_of?(RightScale::ExecutableBundle)
+  first_executable = payload.executables.first
+  if first_executable.kind_of?(::RightScale::RightScriptInstantiation) && first_executable.parameters.has_key?("THREAD_NAME")
+    @thread_name = first_executable.parameters["THREAD_NAME"]
+  end
+end
     end
 
   end
