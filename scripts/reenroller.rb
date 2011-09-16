@@ -57,8 +57,8 @@ module RightScale
           system('/opt/rightscale/sandbox/bin/monit -c /opt/rightscale/etc/monitrc stop instance')
         else
           #start/stop rnac and rchk manually
-          system('/opt/rightscale/right_link/bin/rnac.rb')
-          system('/opt/rightscale/right_link/bin/rchk.rb')
+          system('/opt/rightscale/right_link/bin/rchk.rb --stop checker')
+          system('/opt/rightscale/right_link/bin/rnac.rb --stop instance')
         end
         # Wait for agent process to terminate
         retries = 0
