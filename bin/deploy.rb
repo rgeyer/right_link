@@ -103,8 +103,8 @@ module RightScale
       if ENV['no_proxy']
         cmd_opts << ['--http-no-proxy', ENV['no_proxy']]
       end
-
-      if Platform.linux?
+      
+      if Platform.linux? && File.exist?('/opt/rightscale/sandbox/bin/monit')
         FileUtils.mkdir_p('/opt/rightscale/etc/monit.d')
         cmd_opts << '--monit'
       end

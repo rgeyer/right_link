@@ -52,8 +52,14 @@ module RightScale
         print 'Stopping RightLink daemon...' if options[:verbose]
         pid_file = AgentConfig.pid_file('instance')
         pid = pid_file ? pid_file.read_pid[:pid] : nil
-        system('/opt/rightscale/sandbox/bin/monit -c /opt/rightscale/etc/monitrc stop checker')
-        system('/opt/rightscale/sandbox/bin/monit -c /opt/rightscale/etc/monitrc stop instance')
+        if File.exist?('/opt/rightscale/sandbox/bin/monit')
+          system('/opt/rightscale/sandbox/bin/monit -c /opt/rightscale/etc/monitrc stop checker')
+          system('/opt/rightscale/sandbox/bin/monit -c /opt/rightscale/etc/monitrc stop instance')
+        else
+          #start/stop rnac and rchk manually
+          system('/opt/rightscale/right_link/bin/rnac.rb')
+          system('/opt/rightscale/right_link/bin/rchk.rb')
+        end
         # Wait for agent process to terminate
         retries = 0
         while process_running?(pid) && retries < 20
