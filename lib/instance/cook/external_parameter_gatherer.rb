@@ -105,7 +105,7 @@ module RightScale
         secure_document = result.content.first
         if secure_document.envelope_mime_type.nil?
           @executables_inputs[exe][name] = secure_document
-          @audit.append_info("Got #{name} of '#{exe.nickname}'; #{count_remaining} remain.")
+          append_info_to_audit_entry(exe,name)
           if done?
             @audit.append_info("All credential values have been retrieved and processed.")
             report_success
@@ -124,6 +124,14 @@ module RightScale
     rescue Exception => e
       msg = "An unexpected error occurred while retrieving the value of the #{name} input of '#{exe.nickname}.'"
       report_failure('Unexpected error while retrieving credentials', msg, e)
+    end
+
+    def append_info_to_audit_entry(exe,name)
+      @last_audit_timestamp ||= 0
+      if (Time.now - @last_audit_timestamp).to_i > 10
+        @audit.append_info("Got #{name} of '#{exe.nickname}'; #{count_remaining} remain.")
+        @last_audit_timestamp = Time.now
+      end
     end
 
     # Return the number of credentials remaining to be gathered
