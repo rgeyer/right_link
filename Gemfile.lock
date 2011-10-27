@@ -1,7 +1,7 @@
 GIT
   remote: http://github.com/rightscale/right_agent.git
-  revision: a43af096aaba3f2393ea6870878968da17861812
-  branch: master
+  revision: a6c4121eb9a02bc8d3f2032fe6ef07f64f31fc26
+  branch: azure_30_make_5x8_build_and_run
   specs:
     right_agent (0.5.7)
       amqp (= 0.7.1)
