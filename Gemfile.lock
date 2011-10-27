@@ -1,6 +1,6 @@
 GIT
   remote: http://github.com/rightscale/right_agent.git
-  revision: a6c4121eb9a02bc8d3f2032fe6ef07f64f31fc26
+  revision: 8cbc885bf38f96f872cf16a139595ddb3f11fcb2
   branch: azure_30_make_5x8_build_and_run
   specs:
     right_agent (0.5.7)
